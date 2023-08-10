@@ -5,5 +5,5 @@ export interface ImageInterface {
     title: string;
     alt_text: any;
     description: any;
-    content_type: string;
+    content_type: string
 }
