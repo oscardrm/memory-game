@@ -1,22 +1,53 @@
-
+'use client';
+import { setCurrentUserName } from "@/app/helpers/globalFunctions";
+import { useEffect } from "react";
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+const MySwal = withReactContent(Swal)
 
 const UserNameForm = () => {
+  useEffect(() => {
+    MySwal.fire({
+      title: 'To start please enter your name',
+      input: 'text',
+      inputPlaceholder: 'Enter your name here...',
+      inputAttributes: {
+        autocapitalize: 'off'
+      },
+      showCancelButton: false,
+      confirmButtonText: 'SAVE',
+      showLoaderOnConfirm: true,
+      preConfirm: (name) => {
+        console.log(validatePattern(name));
+        if (name) {
+          if (!validatePattern(name)) {
+            MySwal.showValidationMessage('Please enter a valid name!');
+          } else
+            if (name.length > 50) {
+              MySwal.showValidationMessage('You can only enter a maximum of 50 characters!');
+            } else {
+              saveUserName(name);
+            }
+        } else {
+          MySwal.showValidationMessage('Please enter your name!');
+        }
+      },
+      allowOutsideClick: () => !MySwal.isLoading()
+    });
+  }, [])
+
+  const saveUserName = (name: string) => {
+    setCurrentUserName(name);
+    location.reload();
+  }
+
+  //function to validate pattern 
+  const validatePattern = (value: string) => {
+    return /^[a-zA-Z0-9-_:&.ñÑáéíóúÁÉÍÓÚüÜ/+ ]*$/.test(value);
+  }
+
   return (
-    <div className="w-full max-w-xs">
-      <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
-            Username
-          </label>
-          <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" type="text" placeholder="Username" />
-        </div>
-        <div className="flex items-center justify-between">
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
-            Save
-          </button>
-        </div>
-      </form>
-    </div>
+    <></>
   );
 }
 
