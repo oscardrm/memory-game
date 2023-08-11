@@ -24,38 +24,6 @@ const checkIsVerticalImage = (urlImage: string) => {
     });
 };
 
-const getHorizontalImages2 = (imageData: ApiImagesInterface, format = 'vertical') => {
-    return new Promise<ShowedImageInterface[]>((resolve) => {
-        let resultCardImages: ShowedImageInterface[] = [];
-        imageData.entries.forEach((item, index) => {
-            checkIsVerticalImage(item?.fields?.image?.url)
-                .then(res => {
-                    const objectResult: ShowedImageInterface = {
-                        url: item?.fields?.image?.url,
-                        uuid: item?.fields?.image?.uuid,
-                        title: item?.fields?.image?.title,
-                        matched: false,
-                        flipped: false,
-                        numberOnBoard: 0,
-                        id: ""
-                    };
-
-                    if (!res && format == 'horizontal') {
-                        resultCardImages.push(objectResult);
-                    }
-                    if (res && format === 'vertical') {
-                        resultCardImages.push(objectResult);
-                    }
-                    // finish a return de value of primise when is the last iteration
-                    if (index === imageData.entries.length - 1) {
-                        resolve(resultCardImages);
-                    }
-                })
-        });
-    })
-}
-
-
 const getHorizontalImages = async (imageData: ApiImagesInterface, format = 'vertical') => {
     let resultCardImages: ShowedImageInterface[] = [];
     const resultado = await Promise.all(imageData.entries.map(async (item, index) => {
@@ -91,6 +59,5 @@ export {
     setCurrentUserName,
     clearCurrentUserName,
     checkIsVerticalImage,
-    getHorizontalImages,
-    getHorizontalImages2
+    getHorizontalImages
 }

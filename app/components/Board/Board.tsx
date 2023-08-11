@@ -6,9 +6,12 @@ import UserNameForm from "../UserName/UserNameForm";
 import { getCurrentUserName, getHorizontalImages } from "@/app/helpers/globalFunctions";
 import { ApiImagesInterface } from "@/app/interfaces/images/apiImageInterface";
 import { globalVariables } from "@/app/helpers/globalVariables";
+import { useSearchParams } from "next/navigation";
 
 const Board = () => {
-    let SHOW_CARD_FORMAT = 'vertical';
+    const router = useSearchParams();
+    
+    const SHOW_CARD_FORMAT = router.get('format') ?? 'vertical';
     const [seconds, setSeconds] = useState(0);
     const [isActive, setIsActive] = useState(false);
     const [images, setImages] = useState<ApiImagesInterface>({ entries: [] });
@@ -23,7 +26,6 @@ const Board = () => {
             colorMessage: ""
         });
     let randomId = 0;
-
 
     // when the context charge the first time, go to get the images from the API 
     useEffect(() => {
@@ -56,7 +58,6 @@ const Board = () => {
             })
             .catch(err => console.log(`Some error occured: ${err}`));
     }
-
 
     const getUniqueId = () => {
         return randomId++;
