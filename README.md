@@ -25,7 +25,7 @@ This project is a simple memory card game developed with:
 
 Aditional features
 
-* Can change de the format of card between 'horizontal' or 'vertical, this is because not all images have the same dimensions and it affects the design of the game. So you can change the type by passing 'format' parameter to the url, like [http://localhost:3000?format=horizontal](http://localhost:3000?format=horizontal) by default is 'vertical'.
+* Can change de the format of card between 'horizontal' or 'vertical, this is because not all images have the same dimensions and are diferents I decided to divide them just to give it a little more logic. So you can change the type by passing 'format' parameter to the url, like [http://localhost:3000?format=horizontal](http://localhost:3000?format=horizontal) by default is 'vertical', you can do the same with the game already deployed on my website, check the "Demo" section.
 
 * I have added a timer to make it more fun and competitive and always try to beat my record time with as few error points as possible.
 * Whenever the game starts, it will show you a congratulations message but it may change according to your game result with points:
