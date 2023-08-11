@@ -18,7 +18,6 @@ const UserNameForm = () => {
       confirmButtonText: 'SAVE',
       showLoaderOnConfirm: true,
       preConfirm: (name) => {
-        console.log(validatePattern(name));
         if (name) {
           if (!validatePattern(name)) {
             MySwal.showValidationMessage('Please enter a valid name!');
