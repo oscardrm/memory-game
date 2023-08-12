@@ -26,7 +26,7 @@ This project is a simple memory card game developed with:
 
 Aditional features
 
-* Can change de the format of card between 'horizontal' or 'vertical, this is because not all images have the same dimensions and are diferents I decided to divide them just to give it a little more logic. So you can change the type by passing 'format' parameter to the url, like [http://localhost:3000?format=horizontal](http://localhost:3000?format=horizontal) by default is 'vertical', you can do the same with the game already deployed on my website, check the "Demo" section.
+* You can change the number of even cards you want to play with, this is subject to the availability of the images, the maximum number will be 20, you will receive an error if the requested number of cards cannot be displayed. So you can change the number by passing 'cards' parameter to the url, like [http://localhost:3000?cards=9](http://localhost:3000?cards=9) , you can do the same with the game already deployed on my website, check the "Demo" section.
 
 * I have added a timer to make it more fun and competitive and always try to beat my record time with as few error points as possible.
 * Whenever the game starts, it will show you a congratulations message but it may change according to your game result with points:
