@@ -237,9 +237,9 @@ const Board = () => {
                     )}
                     {
                         images.entries.length > 0 && (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-10 flex justify-center">
+                            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-10 flex justify-center">
                                 {showedImages.map((item) => (
-                                    <div className="box-border w-32 h-52 sm:h-52 sm:w-32 border-4 hover:cursor-pointer" key={item?.id} onClick={() => onClickCard(item)}>
+                                    <div className="box-border h-32 w-20  sm:h-52 sm:w-32 border-4 hover:cursor-pointer" key={item?.id} onClick={() => onClickCard(item)}>
                                         <div className="overflow-hidden bg-no-repeat w-full h-full">
                                             <img
                                                 src={(item.flipped || item.matched) ? item?.url : "./backCard.png"} alt={item.title}
