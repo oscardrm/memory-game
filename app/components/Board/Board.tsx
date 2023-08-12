@@ -30,13 +30,11 @@ const Board = () => {
     // when the context charge the first time, go to get the images from the API 
     useEffect(() => {
         getApiImages();
-        toggleTime();
+        toggleTime(true);
     }, [])
 
     useEffect(() => {
-        console.log(gameResult);
-        
-        toggleTime();
+        toggleTime(!(gameResult.isError || gameResult.isSuccess));
     }, [gameResult.isError, gameResult.isSuccess])
 
     // Timer
@@ -127,7 +125,6 @@ const Board = () => {
             setShowedImages(newValues);
             if (checkGameFinished()) {
                 updateGameRultMessage();
-                toggleTime();
             }
         } catch (error) {
             console.error(error);
@@ -168,8 +165,8 @@ const Board = () => {
         return !showedImages.some((item) => !item.flipped) || gameResult.isError ;
     }
 
-    const toggleTime = () => {
-        setIsActive(!isActive);
+    const toggleTime = (toggle:boolean) => {
+        setIsActive(toggle);
     }
 
     return (
