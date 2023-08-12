@@ -5,4 +5,6 @@ export interface GameResultInterface{
     isSuccess: boolean;
     errorPoints: number;
     successPoints: number;
+    maxNumberOfCards: number,
+    minNumberOfCards: number
 }

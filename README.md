@@ -26,7 +26,8 @@ This project is a simple memory card game developed with:
 
 Aditional features
 
-* You can change the number of even cards you want to play with, this is subject to the availability of the images, the maximum number will be 20, you will receive an error if the requested number of cards cannot be displayed. So you can change the number by passing 'cards' parameter to the url, like [http://localhost:3000?cards=9](http://localhost:3000?cards=9) , you can do the same with the game already deployed on my website, check the "Demo" section.
+* There are two buttons 1 to change the number of even cards on the board and another to reset the board to default values.
+Important: the minimum number of even cards will be 3 and the maximum 10, if you try to enter a value lower or higher than these you will get an error.
 
 * I have added a timer to make it more fun and competitive and always try to beat my record time with as few error points as possible.
 * Whenever the game starts, it will show you a congratulations message but it may change according to your game result with points:
@@ -37,7 +38,7 @@ Aditional features
 
 ## Testing
 
-I've left Jest configured for testing and included a couple.
+I've left Jest configured for testing and included a couple of them.
 
 To check the test just run:
 

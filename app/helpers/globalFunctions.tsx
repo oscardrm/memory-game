@@ -15,7 +15,7 @@ const clearCurrentUserName = () => {
 }
 
 const getCards = async (imageData: ApiImagesInterface, numberCards: any = 9) => {
-    if (numberCards > imageData.entries.length) {
+    if (numberCards > (imageData.entries.length/2)) {
         return [];
     }
     const imgArray = imageData.entries.slice(0, numberCards);
