@@ -2,8 +2,7 @@
 import { GameResultInterface } from "@/app/interfaces/gameResultInterface";
 import { ShowedImageInterface } from "@/app/interfaces/images/imagesShowedInterface";
 import { Fragment, useEffect, useState } from "react";
-import UserNameForm from "../UserName/UserNameForm";
-import { getCurrentUserName, getCards } from "@/app/helpers/globalFunctions";
+import { getCards, requestUserName } from "@/app/helpers/globalFunctions";
 import { ApiImagesInterface } from "@/app/interfaces/images/apiImageInterface";
 import { globalVariables } from "@/app/helpers/globalVariables";
 import Swal from 'sweetalert2';
@@ -11,53 +10,57 @@ import withReactContent from 'sweetalert2-react-content';
 const MySwal = withReactContent(Swal)
 
 const Board = () => {
-    const [seconds, setSeconds] = useState(0);
+    const { DEFAULT_GAME_RESULT, LOCAL_USERNAME, API_IMGES_URL } = globalVariables;
     const [isActive, setIsActive] = useState(false);
+    const [userName, setUserName] = useState("");
     const [images, setImages] = useState<ApiImagesInterface>({ entries: [] });
     const [showedImages, setShowedImages] = useState<ShowedImageInterface[]>([]);
-    const defaultGameResult = {
-        message: '',
-        errorPoints: 0,
-        successPoints: 0,
-        isSuccess: false,
-        isError: false,
-        colorMessage: "",
-        maxNumberOfCards: 10,
-        minNumberOfCards: 3
-    }
-    const [gameResult, setGameResult] = useState<GameResultInterface>(defaultGameResult);
-    let randomId = 0;
+    const [gameResult, setGameResult] = useState<GameResultInterface>(DEFAULT_GAME_RESULT);
 
     // when the context charge the first time, go to get the images from the API 
     useEffect(() => {
+        getUserName();
         getApiImages();
-        toggleTime(true);
-    }, [])
+    }, []);
 
     // To disable timer when is a error or game is finished
     useEffect(() => {
-        toggleTime(!(gameResult.isError || gameResult.isSuccess));
+        if (gameResult.isError || gameResult.isSuccess) {
+            toggleTime(false);
+        }
     }, [gameResult.isError, gameResult.isSuccess])
 
-    // Timer
+    // Set Timer
     useEffect(() => {
         let interval: any = null;
         if (isActive) {
             interval = setInterval(() => {
-                setSeconds(seconds => seconds + 1);
+                setGameResult({...gameResult,seconds: gameResult.seconds + 1})
             }, 1000);
-        } else if (!isActive && seconds !== 0) {
+        } else if (!isActive && gameResult.seconds !== 0) {
             clearInterval(interval);
         }
         return () => clearInterval(interval);
-    }, [isActive, seconds]);
+    }, [isActive, gameResult.seconds]);
 
+    const getUserName = () => {
+        const currentUserName = localStorage.getItem(LOCAL_USERNAME) ?? "";
+        if (!currentUserName && !userName) {
+            requestUserName().then(res => {
+                localStorage.setItem(LOCAL_USERNAME, res?.value ?? "");
+                initGame(res?.value ?? "");
+            });
+        } else {
+            initGame(currentUserName);
+
+        }
+    }
 
     /**
      * This method fetches the images from the API
      */
     const getApiImages = () => {
-        fetch(globalVariables.API_IMGES_URL)
+        fetch(API_IMGES_URL)
             .then(res => res.json())
             .then(data => {
                 setImages(data)
@@ -67,16 +70,12 @@ const Board = () => {
                 setGameResult(
                     {
                         ...gameResult,
-                        message: `Sorry ${getCurrentUserName()}, some error occured currently no cards could be displayed`,
+                        message: `Sorry ${userName}, some error occured currently no cards could be displayed`,
                         isError: true,
                         colorMessage: 'bg-pink-600'
                     });
                 console.log(`Some error occured: ${err}`)
             });
-    }
-
-    const getUniqueId = () => {
-        return randomId++;
     }
 
     const getImagesCards = (imageData: ApiImagesInterface, numberOfCards: number = 9) => {
@@ -87,15 +86,14 @@ const Board = () => {
                     // cloning images and sortering randomly
                     const cardsOrdered = [...unicImages, ...unicImages]
                         .sort(() => Math.random() - 0.5)
-                        .map((card) => ({ ...card, id: `${getUniqueId()}${card.title.replace(/\s+/g, '')}` }));
+                        .map((card) => ({ ...card, id: `${Math.random() * 1}${card.title.replace(/\s+/g, '')}` })); //set unic id
                     setShowedImages(cardsOrdered);
-                    setSeconds(0);
-                    setGameResult(defaultGameResult);
+                    setGameResult(DEFAULT_GAME_RESULT);
                 } else {
                     setGameResult(
                         {
                             ...gameResult,
-                            message: `Sorry ${getCurrentUserName()} cant show you more than ${imageData.entries.length / 2} of even cards, plese enter a lower number.`,
+                            message: `Sorry ${userName} cant show you more than ${imageData.entries.length / 2} of even cards, plese enter a lower number.`,
                             isError: true,
                             colorMessage: 'bg-pink-600'
                         });
@@ -103,10 +101,47 @@ const Board = () => {
             })
     }
 
+    const updateGameRultMessage = () => {
+        let message = '';
+        if (gameResult.errorPoints > gameResult.successPoints) {
+            message = `Congratulations ${userName} You have finished the game but you have more error points than correct points, try again refreshing this page.`;
+        } else
+            if (gameResult.errorPoints < gameResult.successPoints) {
+                message = `Congratulations ${userName}! You have won the game.`;
+            } else {
+                message = `Congratulations you were close ${userName}! You have finished the game but you have the same amount of errors and correct points, try again refreshing this page.`;
+            }
+        setGameResult(
+            {
+                ...gameResult,
+                message: message,
+                isSuccess: true,
+                colorMessage: "bg-indigo-500"
+            });
+    }
+
+    const updateGamePoints = (flippedCards: number, existSameFlippedCard: boolean) => {
+        if (flippedCards == 1) {
+            if (existSameFlippedCard) {
+                setGameResult({ ...gameResult, successPoints: gameResult.successPoints + 1 });
+            } else {
+                setGameResult({ ...gameResult, errorPoints: gameResult.errorPoints + 1 });
+            }
+        }
+    }
+
+    const checkGameFinished = (): boolean => {
+        return !showedImages.some((item) => !item.flipped) || gameResult.isError;
+    }
+
     const hideAllCards = () => {
         const newValues = showedImages.map((item) => ({ ...item, flipped: item.matched }));
         return newValues;
     }
+    const toggleTime = (toggle: boolean) => {
+        setIsActive(toggle);
+    }
+
     const onClickCard = (card: ShowedImageInterface) => {
         try {
             let newValues = showedImages;
@@ -141,44 +176,6 @@ const Board = () => {
         }
     }
 
-    const updateGameRultMessage = () => {
-        let message = '';
-        const userName = getCurrentUserName();
-        if (gameResult.errorPoints > gameResult.successPoints) {
-            message = `Congratulations ${userName} You have finished the game but you have more error points than correct points, try again refreshing this page.`;
-        } else
-            if (gameResult.errorPoints < gameResult.successPoints) {
-                message = `Congratulations ${userName}! You have won the game.`;
-            } else {
-                message = `Congratulations you were close ${userName}! You have finished the game but you have the same amount of errors and correct points, try again refreshing this page.`;
-            }
-        setGameResult(
-            {
-                ...gameResult,
-                message: message,
-                isSuccess: true,
-                colorMessage: "bg-indigo-500"
-            });
-    }
-
-    const updateGamePoints = (flippedCards: number, existSameFlippedCard: boolean) => {
-        if (flippedCards == 1) {
-            if (existSameFlippedCard) {
-                setGameResult({ ...gameResult, successPoints: gameResult.successPoints + 1 });
-            } else {
-                setGameResult({ ...gameResult, errorPoints: gameResult.errorPoints + 1 });
-            }
-        }
-    }
-
-    const checkGameFinished = (): boolean => {
-        return !showedImages.some((item) => !item.flipped) || gameResult.isError;
-    }
-
-    const toggleTime = (toggle: boolean) => {
-        setIsActive(toggle);
-    }
-
     const onClickChangeNumberOfCards = () => {
         MySwal.fire({
             title: 'Please enter the number of even cards you want to play with.',
@@ -206,9 +203,14 @@ const Board = () => {
         });
     }
 
+    const initGame = (userName = "") => {
+        setUserName(userName);
+        toggleTime(true);
+    }
+
     return (
         <Fragment>
-            {getCurrentUserName() ? (
+            {userName && (
                 <>
                     <span className="box-decoration-slice bg-gradient-to-r from-indigo-600 to-pink-500 text-white px-2 text-l sm:text-2xl mb-2">
                         WELCOME TO MEMORY GAME!!!
@@ -225,10 +227,10 @@ const Board = () => {
                             RESET
                         </button>
                     </div>
-
-                    <h1 className="mb-2"><span className="text-indigo-400">
-                        HITS: <b>{gameResult.successPoints}</b></span> | <span className="text-pink-400">ERRORS: <b>{gameResult.errorPoints}</b></span></h1>
-                    <h2 className="mb-2">Timer: <b>{seconds}</b> seconds</h2>
+                    <h1 className="mb-2">
+                        <span> <b>POINTS: </b></span>
+                        <span className="text-indigo-400"> CORRECT: <b>{gameResult.successPoints}</b></span> | <span className="text-pink-400">ERRORS: <b>{gameResult.errorPoints}</b></span></h1>
+                    <h2 className="mb-2">Timer: <b>{gameResult.seconds}</b> seconds</h2>
                     {checkGameFinished() && (
                         <div className={`flex items-center ${gameResult.colorMessage} text-white text-sm font-bold px-4 py-3 mb-2 mt-1`} role="alert">
                             <svg className="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M12.432 0c1.34 0 2.01.912 2.01 1.957 0 1.305-1.164 2.512-2.679 2.512-1.269 0-2.009-.75-1.974-1.99C9.789 1.436 10.67 0 12.432 0zM8.309 20c-1.058 0-1.833-.652-1.093-3.524l1.214-5.092c.211-.814.246-1.141 0-1.141-.317 0-1.689.562-2.502 1.117l-.528-.88c2.572-2.186 5.531-3.467 6.801-3.467 1.057 0 1.233 1.273.705 3.23l-1.391 5.352c-.246.945-.141 1.271.106 1.271.317 0 1.357-.392 2.379-1.207l.6.814C12.098 19.02 9.365 20 8.309 20z" /></svg>
@@ -251,7 +253,7 @@ const Board = () => {
                         )
                     }
                 </>
-            ) : <UserNameForm />}
+            )}
         </Fragment>
     );
 }
