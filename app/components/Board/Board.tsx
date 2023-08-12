@@ -3,15 +3,15 @@ import { GameResultInterface } from "@/app/interfaces/gameResultInterface";
 import { ShowedImageInterface } from "@/app/interfaces/images/imagesShowedInterface";
 import { Fragment, useEffect, useState } from "react";
 import UserNameForm from "../UserName/UserNameForm";
-import { getCurrentUserName, getHorizontalImages } from "@/app/helpers/globalFunctions";
+import { getCurrentUserName, getCards } from "@/app/helpers/globalFunctions";
 import { ApiImagesInterface } from "@/app/interfaces/images/apiImageInterface";
 import { globalVariables } from "@/app/helpers/globalVariables";
 import { useSearchParams } from "next/navigation";
 
 const Board = () => {
     const router = useSearchParams();
-    
-    const SHOW_CARD_FORMAT = router.get('format') ?? 'vertical';
+
+    const NUMBER_OF_CARDS = router.get('cards') ?? 9;
     const [seconds, setSeconds] = useState(0);
     const [isActive, setIsActive] = useState(false);
     const [images, setImages] = useState<ApiImagesInterface>({ entries: [] });
@@ -32,6 +32,12 @@ const Board = () => {
         getApiImages();
         toggleTime();
     }, [])
+
+    useEffect(() => {
+        console.log(gameResult);
+        
+        toggleTime();
+    }, [gameResult.isError, gameResult.isSuccess])
 
     // Timer
     useEffect(() => {
@@ -56,7 +62,14 @@ const Board = () => {
                 setImages(data)
                 getImagesCards(data);
             })
-            .catch(err => console.log(`Some error occured: ${err}`));
+            .catch(err =>{
+                setGameResult(
+                    { ...gameResult, 
+                        message: `Sorry ${getCurrentUserName()}, some error occured currently no cards could be displayed`, 
+                        isError: true,
+                    colorMessage: 'bg-pink-600' });
+                console.log(`Some error occured: ${err}`)
+            });
     }
 
     const getUniqueId = () => {
@@ -64,13 +77,21 @@ const Board = () => {
     }
 
     const getImagesCards = (imageData: ApiImagesInterface) => {
-        getHorizontalImages(imageData, SHOW_CARD_FORMAT)
+        getCards(imageData, NUMBER_OF_CARDS)
             .then(unicImages => {
-                // cloning images and sortering randomly
-                const cardsOrdered = [...unicImages, ...unicImages]
-                    .sort(() => Math.random() - 0.5)
-                    .map((card) => ({ ...card, id: `${getUniqueId()}${card.title.replace(/\s+/g, '')}` }));
-                setShowedImages(cardsOrdered);
+                if (unicImages.length > 0) {
+                    // cloning images and sortering randomly
+                    const cardsOrdered = [...unicImages, ...unicImages]
+                        .sort(() => Math.random() - 0.5)
+                        .map((card) => ({ ...card, id: `${getUniqueId()}${card.title.replace(/\s+/g, '')}` }));
+                    setShowedImages(cardsOrdered);
+                }else{
+                    setGameResult(
+                        { ...gameResult, 
+                            message: `Sorry ${getCurrentUserName()} cant show you more than ${imageData.entries.length} cards, plese enter a lower number`, 
+                            isError: true,
+                        colorMessage: 'bg-pink-600' });
+                }
             })
     }
 
@@ -85,7 +106,6 @@ const Board = () => {
             if (isFlippedCard) {
                 return;
             }
-            setGameResult({ ...gameResult, message: 'Congratulations! You have won the game. The game is over.', isSuccess: true });
             const flippedCards = showedImages.filter((item) => item.flipped && !item.matched).length;
             // if 2 cards have already been flipped then mark all as flipped: false when matched is false
             if (flippedCards === 2) {
@@ -145,8 +165,7 @@ const Board = () => {
     }
 
     const checkGameFinished = (): boolean => {
-        const cardNoFlippled = showedImages.find((item) => !item.flipped);
-        return cardNoFlippled ? false : true
+        return !showedImages.some((item) => !item.flipped) || gameResult.isError ;
     }
 
     const toggleTime = () => {
@@ -172,8 +191,8 @@ const Board = () => {
                         images.entries.length > 0 && (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-10 flex justify-center">
                                 {showedImages.map((item) => (
-                                    <div className="box-border w-20 h-30 sm:h-50 sm:w-32 border-4 hover:cursor-pointer" key={item?.id} onClick={() => onClickCard(item)}>
-                                        <div className="relative max-w-xs overflow-hidden bg-cover bg-no-repeat w-full h-full object-cover">
+                                    <div className="box-border w-32 h-52 sm:h-52 sm:w-32 border-4 hover:cursor-pointer" key={item?.id} onClick={() => onClickCard(item)}>
+                                        <div className="overflow-hidden bg-no-repeat w-full h-full">
                                             <img
                                                 src={(item.flipped || item.matched) ? item?.url : "./backCard.png"} alt={item.title}
                                                 className="transition duration-300 ease-in-out hover:scale-110 w-full h-full object-cover" />
