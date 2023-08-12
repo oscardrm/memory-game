@@ -104,12 +104,12 @@ const Board = () => {
     const updateGameRultMessage = () => {
         let message = '';
         if (gameResult.errorPoints > gameResult.successPoints) {
-            message = `Congratulations ${userName} You have finished the game but you have more error points than correct points, try again refreshing this page.`;
+            message = `Congratulations ${userName} You have finished the game but you have more error points than correct points, try again just click on reset button.`;
         } else
             if (gameResult.errorPoints < gameResult.successPoints) {
                 message = `Congratulations ${userName}! You have won the game.`;
             } else {
-                message = `Congratulations you were close ${userName}! You have finished the game but you have the same amount of errors and correct points, try again refreshing this page.`;
+                message = `Congratulations you were close ${userName}! You have finished the game but you have the same amount of errors and correct points, try again just click on reset button.`;
             }
         setGameResult(
             {
