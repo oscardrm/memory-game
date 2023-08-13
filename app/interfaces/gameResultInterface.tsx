@@ -6,6 +6,5 @@ export interface GameResultInterface{
     errorPoints: number;
     successPoints: number;
     maxNumberOfCards: number,
-    minNumberOfCards: number,
-    seconds: number
+    minNumberOfCards: number
 }
