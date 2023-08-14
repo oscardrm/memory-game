@@ -81,6 +81,8 @@ const Board = () => {
 
     const getImagesCards = (imageData: ApiImagesInterface, numberOfCards: number = 9) => {
         setGameResult({ ...gameResult, maxNumberOfCards: imageData.entries.length / 2 });
+        setSeconds(0);
+        toggleTime(true);
         getCards(imageData, numberOfCards)
             .then(unicImages => {
                 if (unicImages.length > 0) {
