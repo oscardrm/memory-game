@@ -30,7 +30,7 @@ Aditional features
 Important: the minimum number of even cards will be 3 and the maximum 10, if you try to enter a value lower or higher than these you will get an error.
 
 * I have added a timer to make it more fun and competitive and always try to beat my record time with as few error points as possible.
-* Whenever the game starts, it will show you a congratulations message but it may change according to your game result with points:
+* Whenever the game ends, it will show you a congratulations message but it may change according to your game result with points:
     1. If your correct points > error points.
     2. If your correct points < error points.
     3. If your correct points = error points.
