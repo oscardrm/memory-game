@@ -7,7 +7,7 @@ import { ApiImagesInterface } from "@/app/interfaces/images/apiImageInterface";
 import { globalVariables } from "@/app/helpers/globalVariables";
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import Timer from "../Timer/Timer";
+import Timer from "../Timer";
 import { TimerInterface } from "@/app/interfaces/timerInterface";
 const MySwal = withReactContent(Swal)
 
