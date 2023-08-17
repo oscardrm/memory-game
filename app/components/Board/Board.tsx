@@ -7,12 +7,21 @@ import { ApiImagesInterface } from "@/app/interfaces/images/apiImageInterface";
 import { globalVariables } from "@/app/helpers/globalVariables";
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import Timer from "../Timer/Timer";
+import { TimerInterface } from "@/app/interfaces/timerInterface";
 const MySwal = withReactContent(Swal)
 
 const Board = () => {
     const { DEFAULT_GAME_RESULT, LOCAL_USERNAME, API_IMGES_URL } = globalVariables;
-    const [seconds,setSeconds] = useState(0);
-    const [isActive, setIsActive] = useState(false);
+    const [timer, setTimer] = useState<TimerInterface>(
+        {
+            isActive: false,
+            reseted: false,
+            title: 'Timer',
+            subTitle: 'seconds',
+            incrementNumber: 1,
+
+        });
     const [userName, setUserName] = useState("");
     const [images, setImages] = useState<ApiImagesInterface>({ entries: [] });
     const [showedImages, setShowedImages] = useState<ShowedImageInterface[]>([]);
@@ -31,29 +40,15 @@ const Board = () => {
         }
     }, [gameResult.isError, gameResult.isSuccess])
 
-    // Set Timer
-    useEffect(() => {
-        let interval: any = null;
-        if (isActive) {
-            interval = setInterval(() => {
-                setSeconds(seconds => seconds + 1);
-            }, 1000);
-        } else if (!isActive && seconds !== 0) {
-            clearInterval(interval);
-        }
-        return () => clearInterval(interval);
-    }, [isActive, seconds]);
-
     const getUserName = () => {
         const currentUserName = localStorage.getItem(LOCAL_USERNAME) ?? "";
         if (!currentUserName && !userName) {
             requestUserName().then(res => {
                 localStorage.setItem(LOCAL_USERNAME, res?.value ?? "");
-                initGame(res?.value ?? "");
+                setUserName(res?.value ?? "");
             });
         } else {
-            initGame(currentUserName);
-
+            setUserName(currentUserName);
         }
     }
 
@@ -79,54 +74,62 @@ const Board = () => {
             });
     }
 
-    const getImagesCards = (imageData: ApiImagesInterface, numberOfCards: number = 9) => {
-        setGameResult({ ...gameResult, maxNumberOfCards: imageData.entries.length / 2 });
-        setSeconds(0);
-        toggleTime(true);
+    const getImagesCards = (imageData: ApiImagesInterface, numberOfCards: number = gameResult.numberOfCards) => {
         getCards(imageData, numberOfCards)
             .then(unicImages => {
                 if (unicImages.length > 0) {
+                    toggleTime(true);
                     // cloning images and sortering randomly
                     const cardsOrdered = [...unicImages, ...unicImages]
                         .sort(() => Math.random() - 0.5)
                         .map((card) => ({ ...card, id: `${Math.random() * 1}${card.title.replace(/\s+/g, '')}` })); //set unic id
                     setShowedImages(cardsOrdered);
-                    setGameResult(DEFAULT_GAME_RESULT);
+                    setGameResult({ ...DEFAULT_GAME_RESULT, numberOfCards });
                 } else {
                     setGameResult(
                         {
                             ...gameResult,
                             message: `Sorry ${userName} cant show you more than ${imageData.entries.length / 2} of even cards, plese enter a lower number.`,
                             isError: true,
-                            colorMessage: 'bg-pink-600'
+                            colorMessage: 'bg-pink-600',
+                            numberOfCards
                         });
                 }
             })
     }
 
-    const updateGameRultMessage = () => {
-        let message = '';
-        if (gameResult.errorPoints > gameResult.successPoints) {
-            message = `Congratulations ${userName} You have finished the game but you have more error points than correct points, try again just click on reset button.`;
-        } else
-            if (gameResult.errorPoints < gameResult.successPoints) {
-                message = `Congratulations ${userName}! You have won the game.`;
-            } else {
-                message = `Congratulations you were close ${userName}! You have finished the game but you have the same amount of errors and correct points, try again just click on reset button.`;
-            }
-        setGameResult(
-            {
-                ...gameResult,
+    const updateGameRultMessage = (successPoints: number) => {
+        if (checkGameFinished()) {
+            let message = '';
+            if (gameResult.errorPoints > successPoints) {
+                message = `Congratulations ${userName} You have finished the game but you have more error points than correct points, try again just click on reset button.`;
+            } else
+                if (gameResult.errorPoints < successPoints) {
+                    message = `Congratulations ${userName}! You have won the game.`;
+                } else {
+                    message = `Congratulations you were close ${userName}! You have finished the game but you have the same amount of errors and correct points, try again just click on reset button.`;
+                }
+            return {
                 message: message,
-                isSuccess: true,
                 colorMessage: "bg-indigo-500"
-            });
+            };
+        }
+        return null;
     }
 
     const updateGamePoints = (flippedCards: number, existSameFlippedCard: boolean) => {
         if (flippedCards == 1) {
             if (existSameFlippedCard) {
-                setGameResult({ ...gameResult, successPoints: gameResult.successPoints + 1 });
+                const successPoints = gameResult.successPoints + 1;
+                const gameMessage = updateGameRultMessage(successPoints);
+
+                setGameResult({
+                    ...gameResult,
+                    successPoints: successPoints,
+                    isSuccess: checkGameFinished(),
+                    message: gameMessage?.message ?? gameResult.message,
+                    colorMessage: gameMessage?.colorMessage ?? gameResult.colorMessage
+                });
             } else {
                 setGameResult({ ...gameResult, errorPoints: gameResult.errorPoints + 1 });
             }
@@ -142,7 +145,7 @@ const Board = () => {
         return newValues;
     }
     const toggleTime = (toggle: boolean) => {
-        setIsActive(toggle);
+        setTimer({ ...timer, isActive: toggle })
     }
 
     const onClickCard = (card: ShowedImageInterface) => {
@@ -158,7 +161,6 @@ const Board = () => {
                 newValues = hideAllCards();
             }
             const existSameFlippedCard = newValues.some((item) => item.uuid === card.uuid && item.flipped);
-            updateGamePoints(flippedCards, existSameFlippedCard);
             newValues = newValues.map((item) => {
                 // If the same card has already been turned over then we mark it as matched so that they remain turned over
                 if (existSameFlippedCard && item.uuid === card.uuid) {
@@ -169,9 +171,11 @@ const Board = () => {
                 }
                 return item;
             });
+
             setShowedImages(newValues);
+            updateGamePoints(flippedCards, existSameFlippedCard);
             if (checkGameFinished()) {
-                updateGameRultMessage();
+                toggleTime(false);
             }
         } catch (error) {
             console.error(error);
@@ -195,7 +199,7 @@ const Board = () => {
                     if (number > gameResult.maxNumberOfCards || number < gameResult.minNumberOfCards) {
                         MySwal.showValidationMessage(`You can only enter maximum ${gameResult.maxNumberOfCards} and minimun ${gameResult.minNumberOfCards} even cards!`);
                     } else {
-                        getImagesCards(images, number);
+                        resetGame(number);
                     }
                 } else {
                     MySwal.showValidationMessage('Please enter a number!');
@@ -205,11 +209,10 @@ const Board = () => {
         });
     }
 
-    const initGame = (userName = "") => {
-        setUserName(userName);
-        toggleTime(true);
+    const resetGame = (numberOfCards: number = gameResult.numberOfCards) => {
+        setTimer({ ...timer, reseted: !timer.reseted });
+        getImagesCards(images, numberOfCards);
     }
-
     return (
         <Fragment>
             {userName && (
@@ -224,7 +227,7 @@ const Board = () => {
                             CHANGE NUMBER OF CARDS
                         </button>
                         <button className="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded"
-                            onClick={() => getImagesCards(images)}
+                            onClick={() => resetGame()}
                         >
                             RESET
                         </button>
@@ -232,7 +235,7 @@ const Board = () => {
                     <h1 className="mb-2">
                         <span> <b>POINTS: </b></span>
                         <span className="text-indigo-400"> CORRECT: <b>{gameResult.successPoints}</b></span> | <span className="text-pink-400">ERRORS: <b>{gameResult.errorPoints}</b></span></h1>
-                    <h2 className="mb-2">Timer: <b>{seconds}</b> seconds</h2>
+                    <Timer {...timer} />
                     {checkGameFinished() && (
                         <div className={`flex items-center ${gameResult.colorMessage} text-white text-sm font-bold px-4 py-3 mb-2 mt-1`} role="alert">
                             <svg className="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M12.432 0c1.34 0 2.01.912 2.01 1.957 0 1.305-1.164 2.512-2.679 2.512-1.269 0-2.009-.75-1.974-1.99C9.789 1.436 10.67 0 12.432 0zM8.309 20c-1.058 0-1.833-.652-1.093-3.524l1.214-5.092c.211-.814.246-1.141 0-1.141-.317 0-1.689.562-2.502 1.117l-.528-.88c2.572-2.186 5.531-3.467 6.801-3.467 1.057 0 1.233 1.273.705 3.23l-1.391 5.352c-.246.945-.141 1.271.106 1.271.317 0 1.357-.392 2.379-1.207l.6.814C12.098 19.02 9.365 20 8.309 20z" /></svg>

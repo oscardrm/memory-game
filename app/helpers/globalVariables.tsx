@@ -10,6 +10,8 @@ export const globalVariables = {
         isError: false,
         colorMessage: "",
         maxNumberOfCards: 10,
-        minNumberOfCards: 3
+        minNumberOfCards: 3,
+        reseted: false,
+        numberOfCards: 9
     }
 }
