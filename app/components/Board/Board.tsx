@@ -2,14 +2,13 @@
 import { GameResultInterface } from "@/app/interfaces/gameResultInterface";
 import { ShowedImageInterface } from "@/app/interfaces/images/imagesShowedInterface";
 import { Fragment, useEffect, useState } from "react";
-import { getApiData, getCards, requestUserName } from "@/app/helpers/globalFunctions";
+import { getApiData, getCards } from "@/app/utilities/globalFunctions";
 import { ApiImagesInterface } from "@/app/interfaces/images/apiImageInterface";
-import { globalVariables } from "@/app/helpers/globalVariables";
-import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
+import { globalVariables } from "@/app/utilities/globalVariables";
 import Timer from "../Timer";
 import { TimerInterface } from "@/app/interfaces/timerInterface";
-const MySwal = withReactContent(Swal)
+import { requestEvenCardsNumber, requestUserName } from "./utilities/board.utilities";
+import useLocalStorage from "@/app/utilities/hooks/useLocalStorage";
 
 const Board = () => {
     const { DEFAULT_GAME_RESULT, LOCAL_USERNAME, API_IMGES_URL } = globalVariables;
@@ -22,14 +21,13 @@ const Board = () => {
             incrementNumber: 1,
 
         });
-    const [userName, setUserName] = useState("");
+    const [userName] = useLocalStorage(LOCAL_USERNAME, null, requestUserName);
     const [images, setImages] = useState<ApiImagesInterface>({ entries: [] });
     const [showedImages, setShowedImages] = useState<ShowedImageInterface[]>([]);
     const [gameResult, setGameResult] = useState<GameResultInterface>(DEFAULT_GAME_RESULT);
 
     // when the context charge the first time, go to get the images from the API 
     useEffect(() => {
-        getUserName();
         getApiImages();
     }, []);
 
@@ -40,37 +38,25 @@ const Board = () => {
         }
     }, [gameResult.isError, gameResult.isSuccess])
 
-    const getUserName = () => {
-        const currentUserName = localStorage.getItem(LOCAL_USERNAME) ?? "";
-        if (!currentUserName && !userName) {
-            requestUserName().then(res => {
-                localStorage.setItem(LOCAL_USERNAME, res?.value ?? "");
-                setUserName(res?.value ?? "");
-            });
-        } else {
-            setUserName(currentUserName);
-        }
-    }
-
     /**
      * This method fetches the images from the API
      */
     const getApiImages = () => {
         getApiData(API_IMGES_URL)
-        .then(res=>{
-            if(res){
-                setImages(res)
-                getImagesCards(res);
-            }else{
-                setGameResult(
-                    {
-                        ...gameResult,
-                        message: `Sorry ${userName}, some error occured currently no cards could be displayed`,
-                        isError: true,
-                        colorMessage: 'bg-pink-600'
-                    });
-            }
-        })
+            .then(res => {
+                if (res) {
+                    setImages(res)
+                    getImagesCards(res);
+                } else {
+                    setGameResult(
+                        {
+                            ...gameResult,
+                            message: `Sorry ${userName}, some error occured currently no cards could be displayed`,
+                            isError: true,
+                            colorMessage: 'bg-pink-600'
+                        });
+                }
+            })
     }
 
     const getImagesCards = (imageData: ApiImagesInterface, numberOfCards: number = gameResult.numberOfCards) => {
@@ -121,7 +107,6 @@ const Board = () => {
             if (existSameFlippedCard) {
                 const successPoints = gameResult.successPoints + 1;
                 const gameMessage = updateGameRultMessage(successPoints);
-
                 setGameResult({
                     ...gameResult,
                     successPoints: successPoints,
@@ -143,6 +128,8 @@ const Board = () => {
         const newValues = showedImages.map((item) => ({ ...item, flipped: item.matched }));
         return newValues;
     }
+
+    // Set active or disabled timer
     const toggleTime = (toggle: boolean) => {
         setTimer({ ...timer, isActive: toggle })
     }
@@ -182,36 +169,20 @@ const Board = () => {
     }
 
     const onClickChangeNumberOfCards = () => {
-        MySwal.fire({
-            title: 'Please enter the number of even cards you want to play with.',
-            input: 'number',
-            inputPlaceholder: 'Enter the number here...',
-            inputAttributes: {
-                autocapitalize: 'off'
-            },
-            showCancelButton: true,
-            confirmButtonText: 'SAVE',
-            cancelButtonText: "CANCEL",
-            showLoaderOnConfirm: true,
-            preConfirm: (number) => {
-                if (number) {
-                    if (number > gameResult.maxNumberOfCards || number < gameResult.minNumberOfCards) {
-                        MySwal.showValidationMessage(`You can only enter maximum ${gameResult.maxNumberOfCards} and minimun ${gameResult.minNumberOfCards} even cards!`);
-                    } else {
-                        resetGame(number);
-                    }
-                } else {
-                    MySwal.showValidationMessage('Please enter a number!');
+        requestEvenCardsNumber(gameResult.maxNumberOfCards, gameResult.minNumberOfCards)
+            .then(res => {
+                if (res.value) {
+                    resetGame(res.value);
                 }
-            },
-            allowOutsideClick: () => !MySwal.isLoading()
-        });
+            })
     }
 
     const resetGame = (numberOfCards: number = gameResult.numberOfCards) => {
         setTimer({ ...timer, reseted: !timer.reseted });
         getImagesCards(images, numberOfCards);
     }
+
+
     return (
         <Fragment>
             {userName && (

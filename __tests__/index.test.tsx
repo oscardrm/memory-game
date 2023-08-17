@@ -1,5 +1,5 @@
-import { getCards } from '@/app/helpers/globalFunctions';
-import { globalVariables } from '@/app/helpers/globalVariables';
+import { getCards } from '@/app/utilities/globalFunctions';
+import { globalVariables } from '@/app/utilities/globalVariables';
 import { ApiImagesInterface } from '@/app/interfaces/images/apiImageInterface';
 
 describe('User name', () => {

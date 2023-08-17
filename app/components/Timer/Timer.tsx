@@ -1,7 +1,6 @@
 import { TimerInterface } from "@/app/interfaces/timerInterface"
 import { useEffect, useState } from "react";
 
-
 const Timer = (timer: TimerInterface) => {
     const [seconds, setSeconds] = useState(0);
     // Set Timer
