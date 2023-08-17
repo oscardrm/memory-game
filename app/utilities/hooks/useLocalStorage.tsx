@@ -4,16 +4,15 @@ const useLocalStorage = (key: any, initialValue: any, notExistValueAction: any) 
     const [value, setValue] = useState(initialValue);
 
     useEffect(() => {
-        const storedValue = localStorage.getItem(key);
-        if (storedValue) {
-            setValue(JSON.parse(storedValue));
-        } else {
-            if (notExistValueAction) {
-                notExistValueAction()
-                    .then((res: any) => {
-                        setValue(res.value);
-                    })
+        try {
+            const storedValue = localStorage.getItem(key);
+            if (storedValue) {
+                setValue(JSON.parse(storedValue));
+            } else {
+                initNotExistValueAction();
             }
+        } catch (error) {
+            initNotExistValueAction();
         }
     }, []);
 
@@ -23,6 +22,14 @@ const useLocalStorage = (key: any, initialValue: any, notExistValueAction: any) 
         }
     }, [key, value]);
 
+    const initNotExistValueAction = ()=>{
+        if (notExistValueAction) {
+            notExistValueAction()
+                .then((res: any) => {
+                    setValue(res.value);
+                })
+        }
+    }
     return [value, setValue];
 };
 
