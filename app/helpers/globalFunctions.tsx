@@ -54,7 +54,20 @@ const requestUserName = () => {
         allowOutsideClick: () => !MySwal.isLoading()
     });
 }
+
+const getApiData = (apiUrl: string) => {
+    return fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+            return data;
+        })
+        .catch(err => {
+            console.log(`Some error occured: ${err}`)
+            return null;
+        });
+}
 export {
     getCards,
-    requestUserName
+    requestUserName,
+    getApiData
 }

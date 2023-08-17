@@ -2,7 +2,7 @@
 import { GameResultInterface } from "@/app/interfaces/gameResultInterface";
 import { ShowedImageInterface } from "@/app/interfaces/images/imagesShowedInterface";
 import { Fragment, useEffect, useState } from "react";
-import { getCards, requestUserName } from "@/app/helpers/globalFunctions";
+import { getApiData, getCards, requestUserName } from "@/app/helpers/globalFunctions";
 import { ApiImagesInterface } from "@/app/interfaces/images/apiImageInterface";
 import { globalVariables } from "@/app/helpers/globalVariables";
 import Swal from 'sweetalert2';
@@ -56,13 +56,12 @@ const Board = () => {
      * This method fetches the images from the API
      */
     const getApiImages = () => {
-        fetch(API_IMGES_URL)
-            .then(res => res.json())
-            .then(data => {
-                setImages(data)
-                getImagesCards(data);
-            })
-            .catch(err => {
+        getApiData(API_IMGES_URL)
+        .then(res=>{
+            if(res){
+                setImages(res)
+                getImagesCards(res);
+            }else{
                 setGameResult(
                     {
                         ...gameResult,
@@ -70,8 +69,8 @@ const Board = () => {
                         isError: true,
                         colorMessage: 'bg-pink-600'
                     });
-                console.log(`Some error occured: ${err}`)
-            });
+            }
+        })
     }
 
     const getImagesCards = (imageData: ApiImagesInterface, numberOfCards: number = gameResult.numberOfCards) => {
